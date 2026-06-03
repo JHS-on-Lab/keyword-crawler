@@ -21,7 +21,7 @@ from app import config
 
 
 def main() -> None:
-    solr_url = config.SOLR_URL.rstrip("/") if hasattr(config, "SOLR_URL") else ""
+    solr_url = config.SOLR_URL.rstrip("/")
 
     if not solr_url:
         print("[오류] SOLR_URL 이 설정되지 않았습니다.")
