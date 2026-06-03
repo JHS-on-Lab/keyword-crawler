@@ -55,7 +55,7 @@ def setup(component: str, worker_id: str | None = None, log_name: str = "app") -
 # ---------------------------------------------------------------------------
 
 class _ContextFilter(logging.Filter):
-    """필드가 없을 때 기본값을 채워준다."""
+    """필드가 없을 때 기본값을 채워주고, 라이브러리 노이즈를 에러 로그에서 제거한다."""
 
     _DEFAULTS = {
         "worker_id":  "-",
@@ -67,10 +67,20 @@ class _ContextFilter(logging.Filter):
         "error_code": "-",
     }
 
+    # 에러 로그에서 걸러낼 라이브러리 메시지 패턴
+    _NOISE = (
+        "discarding data",      # PyMySQL cursor cleanup
+        "DBAPI exception",
+    )
+
     def filter(self, record: logging.LogRecord) -> bool:
         for key, val in self._DEFAULTS.items():
             if not hasattr(record, key):
                 setattr(record, key, val)
+        msg = record.getMessage()
+        for pattern in self._NOISE:
+            if pattern in msg:
+                return False
         return True
 
 
@@ -118,7 +128,8 @@ def _configure_root(log_dir: Path, log_name: str = "app") -> None:
     root = logging.getLogger()
     root.setLevel(getattr(logging, config.LOG_LEVEL.upper(), logging.INFO))
 
-    for lib in ("httpx", "httpcore", "selenium", "undetected_chromedriver", "paramiko"):
+    for lib in ("httpx", "httpcore", "selenium", "undetected_chromedriver", "paramiko",
+                "pymysql", "sqlalchemy.pool", "sqlalchemy.engine"):
         logging.getLogger(lib).setLevel(logging.WARNING)
 
     is_discovery = log_name.startswith("discovery")

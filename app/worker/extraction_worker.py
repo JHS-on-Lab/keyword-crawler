@@ -168,7 +168,7 @@ def _process_one(
         error_code, is_permanent = classify_exception(exc)
         error_msg = f"{type(exc).__name__}: {exc}"
         logger.warning(
-            f"fetch error url={url} code={error_code.value}",
+            f"fetch error url={url}",
             extra={**extra, "error_code": error_code.value},
         )
         _handle_failure(url_repo, domain_repo, item_id, host, attempt,
@@ -194,7 +194,7 @@ def _process_one(
 
     if isinstance(result, ExtractionFailure):
         logger.warning(
-            f"extract failed url={url} code={result.error_code.value} msg={result.error_msg}",
+            f"extract failed url={url} msg={result.error_msg}",
             extra={**extra, "error_code": result.error_code.value},
         )
         _handle_failure(url_repo, domain_repo, item_id, host, attempt,

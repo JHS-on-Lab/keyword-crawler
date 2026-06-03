@@ -16,11 +16,30 @@ rules_json 형식:
   }
 
 지원 셀렉터 타입:
-  "css"   — selectolax 로 처리. 여러 노드가 매칭되면 텍스트를 이어 붙인다.
-  "xpath" — lxml 로 처리. 속성값(//@attr)과 텍스트(//tag) 모두 지원.
+  "css"      — selectolax 로 처리. 여러 노드가 매칭되면 텍스트를 이어 붙인다.
+  "xpath"    — lxml 로 처리. 속성값(//@attr)과 텍스트(//tag) 모두 지원.
+  "json_api" — JSON API 를 직접 호출해 필드를 추출한다.
+               URL 파라미터에서 값을 뽑아 API URL 을 구성한 뒤 GET 호출.
+               응답 JSON 의 점(.) 경로로 필드를 지정한다.
+
+json_api 규칙 형식 (최상위에 "json_api" 키를 두면 이 모드로 동작):
+  {
+    "json_api": {
+      "url_template": "https://api.example.com/article?id={nid}",
+      "url_param": "nid",          // 원래 URL 에서 추출할 쿼리 파라미터명
+      "title":        "result.title",
+      "body_html":    "result.contentHtml",  // HTML 이면 body_html + body_css
+      "body_css":     ".se-module-text",     // body_html 을 파싱할 CSS 셀렉터
+      "published_at": "result.writtenAt",    // ISO 8601 자동 파싱
+      "author":       "result.writer.nickname",
+      "press":        "result.itemName"
+    },
+    "min_body_len": 5
+  }
 
 published_at 규칙:
   "date_format" — strptime 포맷 문자열. 미지정 시 날짜 파싱을 시도하지 않는다.
+  json_api 모드에서 published_at 가 ISO 8601 이면 date_format 없이도 자동 파싱.
   파싱 실패 시 None 으로 폴백한다 (추출 전체를 실패시키지 않는다).
   타임존은 KST(UTC+9) 고정.
 
@@ -33,6 +52,7 @@ from __future__ import annotations
 import json
 import time
 from datetime import datetime, timezone, timedelta
+from urllib.parse import urlparse, parse_qs
 
 from app import config
 from app.domain_logic.url_normalizer import normalize, url_hash
@@ -80,7 +100,20 @@ class RuleEngine:
         portal_type: str = "",
         keyword: str = "",
     ) -> Article | ExtractionFailure:
-        """rules_json 으로 HTML 에서 필드를 추출한다."""
+        """rules_json 으로 HTML(또는 JSON API)에서 필드를 추출한다."""
+        if "json_api" in rules:
+            return self._extract_json_api(url, rules, portal_type, keyword)
+        return self._extract_html(url, html, rules, portal_type, keyword)
+
+    def _extract_html(
+        self,
+        url: str,
+        html: str,
+        rules: dict,
+        portal_type: str,
+        keyword: str,
+    ) -> Article | ExtractionFailure:
+        """CSS/XPath 규칙으로 HTML 에서 필드를 추출한다."""
         title  = _apply_rule(html, rules.get("title"))
         body   = _apply_rule(html, rules.get("body"))
         author = _apply_rule(html, rules.get("author")) or None
@@ -124,6 +157,106 @@ class RuleEngine:
             extraction_method="rule:css" if "css" in str(rules) else "rule:xpath",
         )
 
+    def _extract_json_api(
+        self,
+        url: str,
+        rules: dict,
+        portal_type: str,
+        keyword: str,
+    ) -> Article | ExtractionFailure:
+        """JSON API 를 직접 호출해 Article 을 추출한다."""
+        spec = rules["json_api"]
+
+        # 원래 URL 의 쿼리 파라미터에서 API 키 값 추출
+        param_name = spec.get("url_param", "")
+        param_value = ""
+        if param_name:
+            qs = parse_qs(urlparse(url).query)
+            values = qs.get(param_name, [])
+            param_value = values[0] if values else ""
+
+        api_url = spec["url_template"].replace(f"{{{param_name}}}", param_value)
+
+        # JSON API 호출
+        try:
+            from app.fetch._client import make_client
+            with make_client() as client:
+                resp = client.get(api_url)
+                if resp.status_code == 404:
+                    return ExtractionFailure(
+                        url=url,
+                        error_code=ErrorCode.FETCH_404,
+                        error_msg="json_api: 404 not found (삭제된 글)",
+                        is_permanent=True,
+                    )
+                resp.raise_for_status()
+                data = resp.json()
+        except Exception as exc:
+            return ExtractionFailure(
+                url=url,
+                error_code=ErrorCode.FETCH_CONNECTION,
+                error_msg=f"json_api fetch failed: {exc}",
+                is_permanent=False,
+            )
+
+        # API 응답 자체가 실패를 나타내는 경우 (예: 삭제된 글)
+        if not data.get("isSuccess", True):
+            return ExtractionFailure(
+                url=url,
+                error_code=ErrorCode.FETCH_404,
+                error_msg=f"json_api: isSuccess=false — {data.get('message', '삭제된 글')}",
+                is_permanent=True,
+            )
+
+        # 점(.) 경로로 JSON 필드 추출
+        title        = _json_path(data, spec.get("title", ""))
+        author       = _json_path(data, spec.get("author", "")) or None
+        press        = _json_path(data, spec.get("press", ""))  or None
+        published_at = _parse_iso(_json_path(data, spec.get("published_at", "")))
+
+        # body: body_html → body_css 로 파싱, 없으면 body 직접
+        body_html = _json_path(data, spec.get("body_html", ""))
+        body_css  = spec.get("body_css", "")
+        if body_html and body_css:
+            body = _extract_css(body_html, body_css)
+        elif body_html:
+            from selectolax.parser import HTMLParser
+            body = HTMLParser(body_html).text(strip=True)
+        else:
+            body = _json_path(data, spec.get("body", ""))
+
+        if not title:
+            return ExtractionFailure(
+                url=url,
+                error_code=ErrorCode.TITLE_EMPTY,
+                error_msg="json_api: empty title",
+                is_permanent=True,
+            )
+
+        min_body = int(rules.get("min_body_len", 5))
+        if not body or len(body) < min_body:
+            return ExtractionFailure(
+                url=url,
+                error_code=ErrorCode.BODY_TOO_SHORT,
+                error_msg=f"json_api: body_len={len(body)} < {min_body}",
+                is_permanent=False,
+            )
+
+        norm = normalize(url)
+        return Article(
+            url=norm,
+            url_hash=url_hash(norm),
+            portal_type=portal_type,
+            keyword=keyword,
+            title=title.strip(),
+            body=body.strip(),
+            published_at=published_at,
+            author=author,
+            press=press,
+            collected_at=datetime.now(timezone.utc),
+            extraction_method="rule:json_api",
+        )
+
 
 # ---------------------------------------------------------------------------
 # 내부 헬퍼
@@ -163,6 +296,32 @@ def _extract_css(html: str, selector: str) -> str:
         return ""
     # 여러 노드가 매칭되면 줄바꿈으로 이어 붙인다 (body 에서 <p> 여러 개 처리).
     return "\n".join(n.text(strip=True) for n in nodes if n.text(strip=True))
+
+
+def _json_path(data: dict, path: str) -> str:
+    """점(.) 구분 경로로 JSON 값을 추출한다. 예: 'result.writer.nickname'"""
+    if not path:
+        return ""
+    try:
+        node = data
+        for key in path.split("."):
+            node = node[key]
+        return str(node) if node is not None else ""
+    except (KeyError, TypeError):
+        return ""
+
+
+def _parse_iso(text: str) -> "datetime | None":
+    """ISO 8601 문자열을 KST datetime 으로 파싱한다."""
+    if not text:
+        return None
+    try:
+        dt = datetime.fromisoformat(text.rstrip("Z"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=_KST)
+        return dt
+    except ValueError:
+        return None
 
 
 def _extract_xpath(html: str, expression: str) -> str:

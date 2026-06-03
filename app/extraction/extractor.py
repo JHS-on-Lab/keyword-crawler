@@ -38,8 +38,10 @@ class DefaultExtractor:
                     url=url, html=html, host=host,
                     rules=rules, portal_type=portal_type, keyword=keyword,
                 )
-                # 규칙이 성공하면 반환, 실패하면 LibraryChain 으로 폴백
                 if isinstance(result, Article):
+                    return result
+                # json_api 규칙은 LibraryChain 이 도움이 안 되므로 바로 반환
+                if "json_api" in rules:
                     return result
 
         # 2단계: 라이브러리 체인 폴백

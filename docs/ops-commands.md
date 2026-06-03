@@ -53,7 +53,31 @@ python -m app --role extraction --worker-id ext-3
 
 ---
 
-## 2. 수동 발견 스크립트
+## 2. 수동 추출 스크립트
+
+```bash
+# 특정 URL 추출 테스트 — 파일 미저장, 결과만 출력
+python scripts/run_extraction.py --url "https://finance.naver.com/item/board_read.naver?code=000660&nid=421731371" --dry-run
+
+# 특정 URL 추출 + portal/keyword 컨텍스트 지정
+python scripts/run_extraction.py --url "https://..." --portal NAVER_STOCK --keyword 000660
+
+# 특정 URL 추출 + 파일 저장
+python scripts/run_extraction.py --url "https://..." --portal NAVER_NEWS --keyword 삼성전자
+
+# DB 에서 discovered URL 하나 꺼내 추출
+python scripts/run_extraction.py
+
+# 특정 포털 URL 만 꺼내 추출
+python scripts/run_extraction.py --portal NAVER_NEWS
+
+# DB 모드 dry-run (URL 을 꺼내되 파일/DB 상태 변경 없음)
+python scripts/run_extraction.py --portal NAVER_STOCK --dry-run
+```
+
+---
+
+## 4. 수동 발견 스크립트
 
 ```bash
 # 특정 키워드 테스트 — DB 미기록, 네트워크만
@@ -74,7 +98,7 @@ python scripts/run_discovery.py --portal naver_news --keyword 삼성전자 --max
 
 ---
 
-## 3. DB 초기화 / 마이그레이션
+## 5. DB 초기화 / 마이그레이션
 
 ```bash
 # 마이그레이션 최신 상태로 적용
@@ -95,7 +119,7 @@ alembic downgrade <revision_id>
 
 ---
 
-## 4. 테이블 관리
+## 6. 테이블 관리
 
 ```bash
 # 스키마 검증 (테이블·컬럼·인덱스 누락 확인)
@@ -115,7 +139,7 @@ python scripts/truncate_table.py --all
 
 ---
 
-## 5. 환경변수 (`.env`)
+## 7. 환경변수 (`.env`)
 
 ```dotenv
 # DB 접속
@@ -164,7 +188,7 @@ HEARTBEAT_INTERVAL_SECONDS=60
 
 ---
 
-## 6. Docker Compose 예시
+## 8. Docker Compose 예시
 
 ```yaml
 services:
@@ -200,7 +224,7 @@ services:
 
 ---
 
-## 7. article_url 상태값 참조
+## 9. article_url 상태값 참조
 
 | status | 의미 | 다음 행동 |
 |---|---|---|
