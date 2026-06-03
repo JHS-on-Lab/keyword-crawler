@@ -1,7 +1,7 @@
 ﻿"""
 페이지 단위로 검색 결과를 가져오는 어댑터의 공통 베이스.
 
-NaverNewsAdapter 와 DaumAdapter 가 중복으로 갖고 있던
+NaverNewsAdapter 와 DaumNewsAdapter 가 중복으로 갖고 있던
   - period / max_pages / delay_ms 초기화
   - 페이지 한도 체크
   - 페이지 간 딜레이

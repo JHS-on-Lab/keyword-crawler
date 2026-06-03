@@ -26,7 +26,7 @@ _DEFAULT_PERIOD   = "d"
 _DEFAULT_DELAY_MS = 800
 
 
-class DaumAdapter(PaginatedAdapter):
+class DaumNewsAdapter(PaginatedAdapter):
     portal_type: str = PortalType.DAUM_NEWS
 
     def __init__(

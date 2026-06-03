@@ -80,7 +80,7 @@ def _detect_chrome_major() -> int | None:
     return None
 
 
-class UCGoogleAdapter:
+class UCGoogleNewsAdapter:
     """
     GOOGLE_DISCOVERY_MODE 에 따라 search / rss 방식으로 동작하는 Google 뉴스 어댑터.
     두 모드 모두 undetected-chromedriver 를 사용한다.

@@ -49,7 +49,7 @@ def run_discovery_loop(portal: str, worker_id: str) -> None:
     )
 
     # adapter 는 루프 레벨에서 한 번 생성해 키워드마다 재사용한다.
-    # UCGoogleAdapter 처럼 브라우저를 초기화하는 경우 매 키워드마다 재생성하면 낭비가 크다.
+    # UCGoogleNewsAdapter 처럼 브라우저를 초기화하는 경우 매 키워드마다 재생성하면 낭비가 크다.
     adapter = make_adapter(portal) if portal.upper() != "ALL" else None
 
     heartbeat_interval = config.HEARTBEAT_INTERVAL_SECONDS

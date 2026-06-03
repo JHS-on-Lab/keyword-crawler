@@ -11,13 +11,13 @@ def make_adapter(portal_type: str) -> SourceAdapter:
         from app.adapters.naver_news import NaverNewsAdapter
         return NaverNewsAdapter()
     if pt == "DAUM_NEWS":
-        from app.adapters.daum_news import DaumAdapter
-        return DaumAdapter()
+        from app.adapters.daum_news import DaumNewsAdapter
+        return DaumNewsAdapter()
     if pt == "GOOGLE_NEWS":
-        from app.adapters.google_news import UCGoogleAdapter
-        return UCGoogleAdapter()
+        from app.adapters.google_news import UCGoogleNewsAdapter
+        return UCGoogleNewsAdapter()
     if pt == "WEIBO":
-        from app.adapters.weibo_news import WeiboAdapter
+        from app.adapters.weibo import WeiboAdapter
         return WeiboAdapter()
     if pt == "NAVER_STOCK":
         from app.adapters.naver_stock import NaverStockAdapter
