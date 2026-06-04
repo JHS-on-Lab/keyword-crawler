@@ -238,12 +238,12 @@ services:
 ```sql
 -- 상태별 현황
 SELECT portal_type, status, COUNT(*) AS cnt
-FROM article_url
+FROM t_article_url
 GROUP BY portal_type, status
 ORDER BY portal_type, status;
 
 -- failed/dead URL 재투입 (특정 포털)
-UPDATE article_url
+UPDATE t_article_url
 SET status = 'discovered', next_retry_at = NOW(), attempt_count = 0
 WHERE status IN ('failed_permanent', 'dead')
   AND portal_type = 'NAVER_NEWS';
@@ -252,6 +252,6 @@ WHERE status IN ('failed_permanent', 'dead')
 SELECT portal_type, COUNT(*) AS total,
        SUM(enabled = 1) AS enabled,
        SUM(next_discover_at IS NULL OR next_discover_at <= NOW()) AS due_now
-FROM keyword
+FROM t_keyword
 GROUP BY portal_type;
 ```
