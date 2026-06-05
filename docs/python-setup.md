@@ -31,6 +31,19 @@ pip install -r requirements.txt \
 
 ---
 
+## Playwright 브라우저 설치
+
+`pip install` 후 별도로 브라우저 바이너리를 다운로드해야 한다.  
+설치하지 않으면 headless 렌더링 시 `Executable doesn't exist` 오류가 발생한다.
+
+```bash
+playwright install chromium
+```
+
+> venv가 활성화된 상태에서 실행해야 한다.
+
+---
+
 ## 앱 실행 시 SSL 설정
 
 사내 프록시 환경에서는 HTTP 요청에도 SSL 검증 오류가 발생한다.  

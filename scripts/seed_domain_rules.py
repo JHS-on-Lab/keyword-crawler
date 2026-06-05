@@ -102,10 +102,14 @@ _RULES: list[dict] = [
         "rules_enabled": True,
         "updated_by": "domain-analysis",
         # 채널A 뉴스 — 전통적 SSR. 정적 fetch로 본문 수신 가능
+        # published_at: <p class="news_view_day">날짜 <span>카테고리</span></p>
+        #   → css로 꺼내면 카테고리 텍스트가 붙어 파싱 실패. XPath text()[1]로 순수 날짜만 추출.
+        # author: <meta name="author"> 에 기자 이름만 깔끔하게 들어있음.
         "rules_json": {
             "title":        {"css": "div.news_title_area h1"},
             "body":         {"css": "div.news_artice_area"},
-            "published_at": {"css": "div.news_title_area p.news_view_day",
+            "author":       {"xpath": "//meta[@name='author']/@content"},
+            "published_at": {"xpath": "//p[@class='news_view_day']/text()[1]",
                              "date_format": "%Y-%m-%d %H:%M"},
             "min_body_len": 100,
         },
@@ -117,11 +121,15 @@ _RULES: list[dict] = [
         "rules_enabled": True,
         "updated_by": "domain-analysis",
         # 순수 CSR이나 /amp/article/{id} 에 정적 본문 존재 → amp_url 변환으로 처리
+        # published_at: span.aeti_num 이 입력/수정 두 개 매칭되어 "\n" 포함 문자열이 됨
+        #   → div.aeti_date_entry 로 범위를 좁혀 입력 날짜만 추출.
+        # author: <strong class="aeti_title"> 에 기자명이 포함됨 ("SBS Biz 안지혜" 형태).
         "rules_json": {
             "amp_url":      {"pattern": "/article/", "replacement": "/amp/article/"},
             "title":        {"css": "h2.titleline_title_end"},
             "body":         {"css": "div.acem_text"},
-            "published_at": {"css": "span.aeti_num",
+            "author":       {"css": "strong.aeti_title"},
+            "published_at": {"css": "div.aeti_date_entry span.aeti_num",
                              "date_format": "%Y.%m.%d %H:%M"},
             "min_body_len": 100,
         },
