@@ -31,14 +31,18 @@ from app.repository.db import db_context
 # ---------------------------------------------------------------------------
 
 _RULES: list[dict] = [
+
+    # ==========================================================================
+    # JSON API 직접 호출
+    # ==========================================================================
+
     {
         "host": "finance.naver.com",
         "render_mode": "static",
         "crawl_delay_ms": 500,
         "rules_enabled": True,
         "updated_by": "seed",
-        # JSON API 직접 호출 — React SPA iframe 이라 CSS 추출 불가
-        # API: m.stock.naver.com/front-api/discussion/detail?id={nid}
+        # React SPA iframe — CSS 추출 불가, JSON API 직접 호출
         "rules_json": {
             "json_api": {
                 "url_template": "https://m.stock.naver.com/front-api/discussion/detail?id={nid}",
@@ -53,6 +57,277 @@ _RULES: list[dict] = [
             "min_body_len": 5,
         },
     },
+
+    # ==========================================================================
+    # SPA / JavaScript 렌더링 필요 → render_mode: headless
+    # trafilatura/readability 가 빈 HTML 만 보기 때문에 PARSE_ERROR 발생
+    # rules_json 없이 headless fetch 후 LibraryChain 폴백으로 처리
+    # ==========================================================================
+
+    {
+        "host": "news.jtbc.co.kr",
+        "render_mode": "headless",
+        "crawl_delay_ms": 2000,
+        "rules_enabled": False,
+        "rules_json": None,
+        "updated_by": "domain-analysis",
+        # JTBC News — React SPA. 정적 fetch 시 빈 <div id="root"> 만 수신
+    },
+    {
+        "host": "www.ichannela.com",
+        "render_mode": "headless",
+        "crawl_delay_ms": 2000,
+        "rules_enabled": False,
+        "rules_json": None,
+        "updated_by": "domain-analysis",
+        # 채널A 뉴스 — JavaScript 렌더링
+    },
+    {
+        "host": "biz.sbs.co.kr",
+        "render_mode": "headless",
+        "crawl_delay_ms": 1500,
+        "rules_enabled": False,
+        "rules_json": None,
+        "updated_by": "domain-analysis",
+        # SBS Biz — React 기반 SPA. 정적 HTML 에 본문 없음
+    },
+
+    # ==========================================================================
+    # 페이월 → rules_enabled: False (추출 시도 자체를 건너뜀)
+    # 영구 실패로 처리해 재시도 소비 방지
+    # ==========================================================================
+
+    {
+        "host": "www.nytimes.com",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": False,
+        "rules_json": None,
+        "updated_by": "domain-analysis",
+        # NYT 유료 구독 페이월 — 본문 접근 불가
+    },
+
+    # ==========================================================================
+    # 정적 HTML + CSS 규칙
+    # trafilatura/readability 가 광고·사이드바 노이즈로 본문을 찾지 못하는 경우.
+    # 아래 셀렉터는 실제 페이지 HTML 구조 기반이며, 사이트 개편 시 재검증 필요.
+    # ==========================================================================
+
+    # ── 매일경제 (25건) ────────────────────────────────────────────────────────
+    {
+        "host": "www.mk.co.kr",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1.news_ttl, h2.news_ttl"},
+            "body":         {"css": "div.news_cnt_detail_wrap"},
+            "author":       {"css": "div.journalist_info strong.name"},
+            "published_at": {"css": "dl.journalist_info dd.date, span.registration_time",
+                             "date_format": "%Y.%m.%d %H:%M"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 노컷뉴스 (65건) ────────────────────────────────────────────────────────
+    {
+        "host": "www.nocutnews.co.kr",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1.title, h2.title"},
+            "body":         {"css": "div.article_body, div#article_body"},
+            "author":       {"css": "div.writer em"},
+            "published_at": {"css": "div.info span.date",
+                             "date_format": "%Y-%m-%d %H:%M"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 조선비즈 (70건) ────────────────────────────────────────────────────────
+    {
+        "host": "biz.chosun.com",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1.article-header__title, h1[class*='title']"},
+            "body":         {"css": "section.article-body, div.article-body, div[class*='article-body']"},
+            "author":       {"css": "span.article-byline__name"},
+            "published_at": {"css": "time.article-header__time, time[class*='time']",
+                             "date_format": "%Y.%m.%d %H:%M"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 조선일보 (40건) ────────────────────────────────────────────────────────
+    {
+        "host": "www.chosun.com",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1.article-header__title, h1[class*='title']"},
+            "body":         {"css": "section.article-body, div.article-body"},
+            "author":       {"css": "span.article-byline__name"},
+            "published_at": {"css": "time[class*='time'], span[class*='date']",
+                             "date_format": "%Y.%m.%d %H:%M"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 마이데일리 (105건) ─────────────────────────────────────────────────────
+    {
+        "host": "www.mydaily.co.kr",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h3.tit_news, h1.tit_news, h2.tit_news"},
+            "body":         {"css": "div.article_txt, div#article_txt, div.news_txt"},
+            "author":       {"css": "div.article_info span.name"},
+            "published_at": {"css": "div.article_info span.date",
+                             "date_format": "%Y.%m.%d %H:%M"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 뉴스1 (15건) ───────────────────────────────────────────────────────────
+    {
+        "host": "www.news1.kr",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1.title, div.detail_tit h2"},
+            "body":         {"css": "div.detail_body, article.detail_article, div.news_article"},
+            "author":       {"css": "div.detail_info span.name"},
+            "published_at": {"css": "div.detail_info span.date",
+                             "date_format": "%Y-%m-%d %H:%M"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 동아사이언스 (15건) ────────────────────────────────────────────────────
+    {
+        "host": "www.dongascience.com",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1.article_title, div.view_top h2"},
+            "body":         {"css": "div.article_txt, div.view_content, div.news_view_content"},
+            "published_at": {"css": "div.article_info span.date, span.date",
+                             "date_format": "%Y.%m.%d %H:%M"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 전남일보 (20건) ────────────────────────────────────────────────────────
+    {
+        "host": "www.jndn.com",
+        "render_mode": "static",
+        "crawl_delay_ms": 1500,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1.article_title, div.article_head h2, h3.tit"},
+            "body":         {"css": "div.article_txt, div#article_body, div.view_txt"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 광주일보 (15건) ────────────────────────────────────────────────────────
+    {
+        "host": "www.kwangju.co.kr",
+        "render_mode": "static",
+        "crawl_delay_ms": 1500,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1.article_title, div.view_title h2, h3.tit"},
+            "body":         {"css": "div.article_txt, div#article_body, div.article_content"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 더파워 (15건) ──────────────────────────────────────────────────────────
+    {
+        "host": "www.thepowernews.co.kr",
+        "render_mode": "static",
+        "crawl_delay_ms": 1500,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1[class*='title'], h2[class*='title'], div.view_tit"},
+            "body":         {"css": "div[class*='article'], div[class*='view_con'], div#article_body"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 위클리트레이드 (10건) ──────────────────────────────────────────────────
+    {
+        "host": "weeklytrade.co.kr",
+        "render_mode": "static",
+        "crawl_delay_ms": 1500,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1[class*='title'], h2[class*='title']"},
+            "body":         {"css": "div[class*='content'], div[class*='article'], div.view_body"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ── 스카이에디일리 모바일 (5건) ────────────────────────────────────────────
+    {
+        "host": "m.skyedaily.com",
+        "render_mode": "static",
+        "crawl_delay_ms": 1000,
+        "rules_enabled": True,
+        "updated_by": "domain-analysis",
+        "rules_json": {
+            "title":        {"css": "h1[class*='title'], h2[class*='title']"},
+            "body":         {"css": "div[class*='article'], div[class*='view'], div.news_txt"},
+            "min_body_len": 100,
+        },
+    },
+
+    # ==========================================================================
+    # 소량 실패 (5건 이하) — CSS 규칙 없이 crawl_delay + static 으로 재시도 유도
+    # 규칙 추가 전 실제 HTML 구조 확인 후 업데이트 권장
+    # ==========================================================================
+
+    {"host": "www.areyou.co.kr",      "render_mode": "static", "crawl_delay_ms": 1500,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.gndomin.com",       "render_mode": "static", "crawl_delay_ms": 1500,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.worktoday.co.kr",   "render_mode": "static", "crawl_delay_ms": 1500,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.techholic.co.kr",   "render_mode": "static", "crawl_delay_ms": 1000,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.korea.kr",          "render_mode": "static", "crawl_delay_ms": 1000,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.tennispeople.kr",   "render_mode": "static", "crawl_delay_ms": 1500,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.stoo.com",          "render_mode": "static", "crawl_delay_ms": 1000,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.seoul.co.kr",       "render_mode": "static", "crawl_delay_ms": 1000,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.econotelling.com",  "render_mode": "static", "crawl_delay_ms": 1500,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "www.doctorstimes.com",  "render_mode": "static", "crawl_delay_ms": 1500,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
+    {"host": "biz.newdaily.co.kr",    "render_mode": "static", "crawl_delay_ms": 1000,
+     "rules_enabled": False, "rules_json": None, "updated_by": "domain-analysis"},
 ]
 
 # ---------------------------------------------------------------------------

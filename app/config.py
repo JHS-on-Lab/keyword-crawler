@@ -51,7 +51,6 @@ RDS_DB       = _env("RDS_DB")
 
 # Worker
 WORKER_ID              = _env("WORKER_ID", "worker-1")
-EXTRACTION_CONCURRENCY = _env_int("EXTRACTION_CONCURRENCY", 4)
 
 # Fetcher
 DEFAULT_CRAWL_DELAY_MS  = _env_int("DEFAULT_CRAWL_DELAY_MS", 1000)
@@ -63,6 +62,10 @@ HTTP_VERIFY_SSL         = _env_bool("HTTP_VERIFY_SSL", True)   # 사내 자체�
 # search: google.com/search?tbm=nws 스크랩 (기본)
 # rss:    Google News RSS + Chrome CBMi URL 변환 (봇 차단 시 대안)
 GOOGLE_DISCOVERY_MODE   = _env("GOOGLE_DISCOVERY_MODE", "search")
+
+# Daum 뉴스 수집 범위 (기본: 전체 언론사)
+# false 로 설정하면 뉴스제휴 언론사만 수집 (SHOW_DNS=1)
+DAUM_NEWS_ALL         = _env_bool("DAUM_NEWS_ALL", True)
 
 # 포털별 발견 최대 페이지 수 (키워드 1회 실행당)
 NAVER_MAX_PAGES       = _env_int("NAVER_MAX_PAGES",       10)
@@ -77,8 +80,9 @@ FILE_SINK_DIR   = _env("FILE_SINK_DIR", "./data")
 LOG_DIR         = _env("LOG_DIR", "./logs")
 
 # Solr (SINK_TYPE=solr 일 때만 필요)
-SOLR_URL        = _env("SOLR_URL", "")         # 예: http://localhost:8983/solr/news
-SOLR_BATCH_SIZE = _env_int("SOLR_BATCH_SIZE", 100)
+SOLR_URL              = _env("SOLR_URL", "")         # 예: http://localhost:8983/solr/news
+SOLR_BATCH_SIZE       = _env_int("SOLR_BATCH_SIZE", 100)
+SOLR_COMMIT_WITHIN_MS = _env_int("SOLR_COMMIT_WITHIN_MS", 5000)
 
 # Retry / Backoff
 MAX_ATTEMPTS              = _env_int("MAX_ATTEMPTS", 5)

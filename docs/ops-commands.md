@@ -77,7 +77,7 @@ python scripts/run_extraction.py --portal NAVER_STOCK --dry-run
 
 ---
 
-## 4. 수동 발견 스크립트
+## 3. 수동 발견 스크립트
 
 ```bash
 # 특정 키워드 테스트 — DB 미기록, 네트워크만
@@ -98,7 +98,7 @@ python scripts/run_discovery.py --portal naver_news --keyword 삼성전자 --max
 
 ---
 
-## 5. DB 초기화 / 마이그레이션
+## 4. DB 초기화 / 마이그레이션
 
 ```bash
 # 마이그레이션 최신 상태로 적용
@@ -119,7 +119,7 @@ alembic downgrade <revision_id>
 
 ---
 
-## 6. 테이블 관리
+## 5. 테이블 관리
 
 ```bash
 # 스키마 검증 (테이블·컬럼·인덱스 누락 확인)
@@ -139,7 +139,7 @@ python scripts/truncate_table.py --all
 
 ---
 
-## 7. 환경변수 (`.env`)
+## 6. 환경변수 (`.env`)
 
 ```dotenv
 # DB 접속
@@ -168,10 +168,13 @@ LOG_DIR=./logs
 
 # Solr (SINK_TYPE=solr 시)
 SOLR_URL=http://localhost:8983/solr/news
+SOLR_BATCH_SIZE=100          # 버퍼 flush 단위
+SOLR_COMMIT_WITHIN_MS=5000   # flush 후 Solr 커밋 완료 제한(ms). commit=true 대신 사용해 병목 방지
 
 # 포털별 최대 페이지 수
 NAVER_MAX_PAGES=10
 DAUM_MAX_PAGES=10
+DAUM_NEWS_ALL=true           # true=전체 언론사(기본), false=뉴스제휴 언론사만
 GOOGLE_MAX_PAGES=5
 NAVER_STOCK_MAX_PAGES=5
 
@@ -188,7 +191,7 @@ HEARTBEAT_INTERVAL_SECONDS=60
 
 ---
 
-## 8. Docker Compose 예시
+## 7. Docker Compose 예시
 
 ```yaml
 services:
@@ -224,7 +227,7 @@ services:
 
 ---
 
-## 9. article_url 상태값 참조
+## 8. article_url 상태값 참조
 
 | status | 의미 | 다음 행동 |
 |---|---|---|

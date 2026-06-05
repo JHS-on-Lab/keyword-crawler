@@ -261,7 +261,7 @@ erDiagram
 | 소스 | 기간 필터 | 최신순 정렬 | 중단 전략 | render_mode | 비고 |
 |---|---|---|---|---|---|
 | 네이버 | 1일·1주 | 가능 | 증분 중단(정렬 신뢰) | static 우선 | 검색 결과가 무한 스크롤 → 9.5 |
-| 다음 | 1일·1주 | 가능 | 증분 중단(정렬 신뢰) | static 우선 | 네이버와 동일 전략 공유 |
+| 다음 | 1일·1주 | 가능 | 증분 중단(정렬 신뢰) | static 우선 | SHOW_DNS=0 쿠키로 전체 언론사 수집. 제휴사(v.daum.net/v/) + 비제휴사(cp.news.search.daum.net/p/) 두 URL 패턴 처리 |
 | 구글 | 1일·1주(`tbs=qdr:d` 등) | **없음** | 집합 한정 + 날짜 판정 + 상한 | **headless** | 안티봇 가장 공격적, 보수적 속도 |
 | 바이두 | 분석 필요 | 분석 필요 | 분석 후 결정 | headless 가능성 높음 | 9.4 |
 
@@ -465,8 +465,9 @@ Traceback (most recent call last):
 
 - `SINK_TYPE` = `file` | `solr`
 - `FILE_SINK_DIR`, `LOG_DIR`
+- `SOLR_BATCH_SIZE`, `SOLR_COMMIT_WITHIN_MS`(기본 5000ms — 다수 컨테이너 동시 flush 시 하드 커밋 병목 방지)
 - `DB_DSN`
-- `WORKER_ID`(점유 식별), `EXTRACTION_CONCURRENCY`
+- `WORKER_ID`(점유 식별)
 - `RULES_CACHE_TTL_SECONDS`(기본 60)
 - `CLAIM_TIMEOUT_SECONDS`(reaper 기준)
 - `MAX_ATTEMPTS`, `BACKOFF_BASE_SECONDS`, `BACKOFF_MAX_SECONDS`
