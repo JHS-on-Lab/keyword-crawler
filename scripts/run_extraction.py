@@ -128,7 +128,7 @@ def _run_url_mode(args: argparse.Namespace) -> None:
         print(f"press       : {result.press}")
         print(f"published_at: {result.published_at}")
         print(f"body_len    : {result.body_len}")
-        print(f"body preview: {result.body[:300]!r}")
+        print(f"body:\n{result.body}")
 
         if args.dry_run:
             print("\n(dry-run — 파일 미저장)")
@@ -216,7 +216,7 @@ def _run_db_mode(args: argparse.Namespace) -> None:
         print(f"press       : {result.press}")
         print(f"published_at: {result.published_at}")
         print(f"body_len    : {result.body_len}")
-        print(f"body preview: {result.body[:300]!r}")
+        print(f"body:\n{result.body}")
 
         if args.dry_run:
             print("\n(dry-run — 파일 미저장, DB 상태 미변경)")
