@@ -187,7 +187,8 @@ def _run_db_mode(args: argparse.Namespace) -> None:
             fr = fetch_by_render_mode(url, render_mode, fetcher, headless)
         except Exception as exc:
             print(f"fetch 오류: {exc}")
-            url_repo.mark_failed(item["id"], error_code="UNKNOWN",
+            from app.types import ErrorCode
+            url_repo.mark_failed(item["id"], error_code=ErrorCode.UNKNOWN,
                                  error_msg=str(exc), is_permanent=False,
                                  next_retry_at=None)
             return

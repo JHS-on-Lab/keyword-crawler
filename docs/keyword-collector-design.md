@@ -200,7 +200,7 @@ erDiagram
 - **결과 데이터**: JSON Lines(`.jsonl`), append 친화적이고 나중에 Solr bulk import에 그대로 쓸 수 있다.
 - **파티셔닝**: `data/{YYYY-MM-DD}/{portal_type}.jsonl` — 날짜·소스별로 나눠 관리·재적재를 조각 단위로.
 - **운영 로그**: 수집 진행·하트비트·에러는 콘텐츠 데이터와 섞지 않고 별도 로그로 분리한다. 정보 로그와 **전용 에러 로그**를 또 나눈다 — 상세는 12절.
-- Article 레코드 필드(예): `url`, `url_hash`, `portal_type`, `keyword`, `title`, `body`, `published_at`, `author`, `press`, `collected_at`, `extraction_method`, `body_len`.
+- Article 레코드 필드(예): `url`, `url_hash`, `portal_type`, `keyword`, `title`, `body`, `published_at`, `author`, `collected_at`, `extraction_method`, `body_len`.
 
 ---
 
@@ -513,7 +513,7 @@ Traceback (most recent call last):
 → 검증: 키워드 하나로 발견 → 큐에 URL이 쌓이고 5단계 워커가 처리(발견+추출이 처음 이어지는 순간).
 
 **7. 나머지 소스 어댑터.** 다음 → 구글 → 바이두(전략 확정 후). 8절 소스별 발견 전략 적용.
-- 구글: `google.com/search?tbm=nws` 를 undetected-chromedriver 로 스크랩. RSS는 CBMi 리다이렉트 문제로 미사용 (`decisions/google-discovery.md` 참고).
+- 구글: `google.com/search?tbm=nws` 를 undetected-chromedriver 로 스크랩. RSS는 CBMi 리다이렉트 문제로 미사용 (`GOOGLE_DISCOVERY_MODE=rss` 로 대안 전환 가능).
 - 바이두: 미구현 (전략 미확정 — 해외 접속 차단 및 중국 프록시 필요 여부 선행 분석 필요).
 
 **8. 규칙 엔진 + 핫리로드.** `rules_json` 해석기 + TTL 캐시 + 규칙 우선 체인.

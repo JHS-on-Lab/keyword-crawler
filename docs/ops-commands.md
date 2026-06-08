@@ -71,7 +71,7 @@ python scripts/run_extraction.py
 # 특정 포털 URL 만 꺼내 추출
 python scripts/run_extraction.py --portal NAVER_NEWS
 
-# DB 모드 dry-run (URL 을 꺼내되 파일/DB 상태 변경 없음)
+# DB 모드 dry-run (URL 을 꺼내 결과만 출력. 파일 미저장. 단 DB 에 status=extracting 으로 임시 기록됨 — reaper 가 자동 복구)
 python scripts/run_extraction.py --portal NAVER_STOCK --dry-run
 ```
 
@@ -129,9 +129,9 @@ python scripts/verify_schema.py
 python scripts/check_db.py
 
 # 특정 테이블 데이터 삭제 (확인 프롬프트 있음)
-python scripts/truncate_table.py --table article_url
-python scripts/truncate_table.py --table collection_log
-python scripts/truncate_table.py --table keyword
+python scripts/truncate_table.py --table t_article_url
+python scripts/truncate_table.py --table t_collection_log
+python scripts/truncate_table.py --table t_keyword
 
 # 전체 테이블 초기화 (주의)
 python scripts/truncate_table.py --all
@@ -158,7 +158,6 @@ TUNNEL_LOCAL_PORT=13306
 
 # 워커 동작
 WORKER_ID=worker-1
-EXTRACTION_CONCURRENCY=4
 MAX_ATTEMPTS=5
 
 # 파일 저장
@@ -176,7 +175,9 @@ NAVER_MAX_PAGES=10
 DAUM_MAX_PAGES=10
 DAUM_NEWS_ALL=true           # true=전체 언론사(기본), false=뉴스제휴 언론사만
 GOOGLE_MAX_PAGES=5
+BAIDU_MAX_PAGES=5
 NAVER_STOCK_MAX_PAGES=5
+GOOGLE_DISCOVERY_MODE=search # search(기본) | rss
 
 # 백오프 / 타임아웃
 BACKOFF_BASE_SECONDS=30
@@ -227,7 +228,7 @@ services:
 
 ---
 
-## 8. article_url 상태값 참조
+## 8. t_article_url 상태값 참조
 
 | status | 의미 | 다음 행동 |
 |---|---|---|

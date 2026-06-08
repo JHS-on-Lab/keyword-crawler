@@ -272,23 +272,6 @@ _RULES: list[dict] = [
         },
     },
 
-    # ── 뉴스1 (15건) ───────────────────────────────────────────────────────────
-    {
-        "host": "www.news1.kr",
-        "render_mode": "static",
-        "crawl_delay_ms": 1000,
-        "rules_enabled": True,
-        "updated_by": "domain-analysis",
-        "rules_json": {
-            "title":        {"css": "h1.title, div.detail_tit h2"},
-            "body":         {"css": "div.detail_body, article.detail_article, div.news_article"},
-            "author":       {"css": "div.detail_info span.name"},
-            "published_at": {"css": "div.detail_info span.date",
-                             "date_format": "%Y-%m-%d %H:%M"},
-            "min_body_len": 100,
-        },
-    },
-
     # ── 동아사이언스 (15건) ────────────────────────────────────────────────────
     {
         "host": "www.dongascience.com",
