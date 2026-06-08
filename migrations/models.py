@@ -5,7 +5,7 @@ ORM 매핑 없이 MetaData + Table 로만 정의해 Alembic autogenerate에 사�
 
 from sqlalchemy import (
     MetaData, Table, Column,
-    BigInteger, String, Integer, Boolean, Float,
+    BigInteger, String, Integer, SmallInteger, Boolean, Float,
     DateTime, Date, Text, JSON,
     UniqueConstraint, Index,
 )
@@ -39,8 +39,8 @@ keyword = Table(
            comment="수집 주기(초). 기본 86400 = 24시간"),
     Column("next_discover_at", DateTime,    nullable=True, index=True,
            comment="다음 수집 예정 시각(UTC). NULL 또는 과거이면 즉시 수집 대상"),
-    Column("last_cursor",      String(512), nullable=True,
-           comment="페이지네이션 재개용 커서. 403 실패 시 저장, 성공 완료 시 NULL 리셋"),
+    Column("retry_pending",    SmallInteger(), nullable=False, server_default="0",
+           comment="다음 수집 시 full scan 필요 여부. 수집 중단(403 등) 시 1, 성공 완료 시 0"),
     UniqueConstraint("keyword", "portal_type", name="uq_keyword_portal"),
     mysql_engine="InnoDB",
     mysql_charset="utf8mb4",

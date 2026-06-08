@@ -123,13 +123,12 @@ def _run_one(
         if adapter is None:
             adapter = make_adapter(portal)
 
-        # last_cursor 가 있으면 이전 수집이 중단된 적 있음 (재시도 모드)
+        # retry_pending=True 면 이전 수집이 중단된 적 있음 (재시도 모드)
         # → 항상 1페이지부터 full scan: 대기 시간 중 올라온 신규 기사 누락 방지 + 미수집 구간 완성
         # → early-stop 비활성화: 1페이지 전부 중복이라도 뒤 페이지에 미수집 구간이 있을 수 있음
-        saved_cursor = kw.get("last_cursor")
-        is_retry     = saved_cursor is not None
-        cursor       = None  # 재시도 포함 항상 1페이지부터 시작
-        page         = 1
+        is_retry = bool(kw.get("retry_pending"))
+        cursor   = None
+        page     = 1
 
         if is_retry:
             logger.info(
@@ -162,8 +161,7 @@ def _run_one(
 
         duration_ms = int((time.monotonic() - started_mono) * 1000)
 
-        # 성공 완료 → last_cursor 리셋 (다음 수집은 첫 페이지부터)
-        kw_repo.set_cursor(keyword_id, None)
+        kw_repo.set_retry_pending(keyword_id, False)
 
         log_repo.insert_discovery(DiscoveryLog(
             keyword_id    = keyword_id,
@@ -207,10 +205,8 @@ def _run_one(
                 extra={**extra, "phase": "discover_error"},
             )
 
-        # retry 플래그 저장 → 다음 수집은 full scan 모드로 진입
-        # cursor 가 None 이면(1페이지 실패) 명시적 sentinel 사용
         try:
-            kw_repo.set_cursor(keyword_id, cursor or "retry")
+            kw_repo.set_retry_pending(keyword_id, True)
         except Exception:
             pass
 

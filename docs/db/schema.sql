@@ -13,7 +13,7 @@ CREATE TABLE t_keyword (
   priority         INT           NOT NULL DEFAULT 0   COMMENT '수집 우선순위. 높을수록 먼저 처리 (ORDER BY priority DESC)',
   interval_seconds INT           NOT NULL DEFAULT 86400 COMMENT '수집 주기(초). 기본 86400 = 24시간',
   next_discover_at DATETIME               COMMENT '다음 수집 예정 시각(UTC). NULL 또는 과거이면 즉시 수집 대상',
-  last_cursor      VARCHAR(512)           COMMENT '페이지네이션 재개용 커서. 403 실패 시 저장, 성공 완료 시 NULL 리셋',
+  retry_pending    TINYINT(1)    NOT NULL DEFAULT 0 COMMENT '다음 수집 시 full scan 필요 여부. 수집 중단(403 등) 시 1, 성공 완료 시 0',
   PRIMARY KEY (id),
   UNIQUE KEY uq_keyword_portal        (keyword, portal_type),
   KEY        ix_keyword_next_discover_at (next_discover_at)

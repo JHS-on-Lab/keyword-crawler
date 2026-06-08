@@ -16,7 +16,7 @@ EXPECTED_TABLES = {"t_keyword", "t_article_url", "t_domain", "t_collection_log",
 EXPECTED_COLUMNS = {
     "t_keyword": {
         "id", "keyword", "portal_type", "interval_seconds",
-        "next_discover_at", "last_cursor",
+        "next_discover_at", "retry_pending",
         "enabled", "priority", "display_name", "disabled_reason",
     },
     "t_article_url": {

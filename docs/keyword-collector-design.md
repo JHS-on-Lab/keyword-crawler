@@ -140,7 +140,7 @@ erDiagram
     string display_name
     int interval_seconds
     timestamp next_discover_at
-    string last_cursor
+    int retry_pending
     bool enabled
     int priority
     string disabled_reason
@@ -275,7 +275,7 @@ erDiagram
 
 검색 결과가 페이지네이션이 아니라 무한 스크롤인 경우:
 
-1. **내부 요청 직접 호출을 먼저 시도.** 무한 스크롤은 대개 뒤에서 "다음 N개" API(보통 JSON)를 호출한다. 브라우저 개발자도구 Network 탭에서 그 요청의 URL·파라미터(오프셋/start)·응답 형태를 확인해, 호출 가능하면 headless 없이 정적 HTTP로 페이지네이션처럼 다룬다(오프셋 값이 `last_cursor`가 된다). 가장 가볍고 차단 위험도 낮다.
+1. **내부 요청 직접 호출을 먼저 시도.** 무한 스크롤은 대개 뒤에서 "다음 N개" API(보통 JSON)를 호출한다. 브라우저 개발자도구 Network 탭에서 그 요청의 URL·파라미터(오프셋/start)·응답 형태를 확인해, 호출 가능하면 headless 없이 정적 HTTP로 페이지네이션처럼 다룬다. 가장 가볍고 차단 위험도 낮다. 가장 가볍고 차단 위험도 낮다.
 2. **막히면 headless 스크롤로 폴백.** 토큰·서명·쿠키로 내부 요청이 거부되면 headless로 스크롤한다. 단 무작정 끝까지가 아니라 9.1~9.2의 중단 조건(기간 필터·컷오프·상한)을 그대로 적용한다. 스크롤 후에는 고정 sleep 대신 "새 항목이 나타날 때까지 대기"하고, 한 세션 내 중복은 url_hash가 최종적으로 잡는다.
 
 ---

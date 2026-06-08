@@ -37,7 +37,7 @@ class KeywordRepo:
         with self._engine.begin() as conn:
             rows = conn.execute(
                 text(f"""
-                    SELECT id, keyword, portal_type, interval_seconds, last_cursor
+                    SELECT id, keyword, portal_type, interval_seconds, retry_pending
                     FROM t_keyword
                     WHERE enabled = true
                       AND (next_discover_at IS NULL OR next_discover_at <= NOW())
@@ -73,15 +73,15 @@ class KeywordRepo:
                 {"next_at": next_at, "kid": keyword_id},
             )
 
-    def set_cursor(self, keyword_id: int, cursor: str | None) -> None:
-        """last_cursor 를 갱신한다.
-        - 403 실패 시: 실패한 cursor 저장 → 재시도 시 해당 페이지부터 재개
-        - 성공 완료 시: None 으로 리셋 → 다음 수집은 첫 페이지부터
+    def set_retry_pending(self, keyword_id: int, pending: bool) -> None:
+        """retry_pending 을 갱신한다.
+        - 수집 중단(403 등) 시: True → 다음 수집은 full scan 모드
+        - 성공 완료 시: False → 다음 수집은 early-stop 포함 정상 모드
         """
         with self._engine.begin() as conn:
             conn.execute(
-                text("UPDATE t_keyword SET last_cursor = :cursor WHERE id = :kid"),
-                {"cursor": cursor, "kid": keyword_id},
+                text("UPDATE t_keyword SET retry_pending = :pending WHERE id = :kid"),
+                {"pending": int(pending), "kid": keyword_id},
             )
 
     def list_all(self, portal: str = "ALL") -> list[dict]:

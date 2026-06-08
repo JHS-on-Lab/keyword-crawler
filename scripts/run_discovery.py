@@ -155,7 +155,7 @@ def _peek_next_keyword(engine, portal: str) -> dict | None:
     with engine.connect() as conn:
         row = conn.execute(
             text(f"""
-                SELECT id, keyword, portal_type, last_cursor
+                SELECT id, keyword, portal_type, retry_pending
                 FROM t_keyword
                 WHERE enabled = true
                   AND (next_discover_at IS NULL OR next_discover_at <= NOW())
@@ -192,7 +192,7 @@ def _run_db_mode(args: argparse.Namespace) -> None:
         keyword     = kw["keyword"]
         keyword_id  = kw["id"]
         portal_type = kw["portal_type"]
-        is_retry = kw.get("last_cursor") is not None
+        is_retry = bool(kw.get("retry_pending"))
 
         print(f"[portal={portal_type}] keyword='{keyword}' (id={keyword_id}) 발견 시작"
               + (" (dry-run)" if dry else "")
@@ -219,7 +219,7 @@ def _run_db_mode(args: argparse.Namespace) -> None:
             ins, skp = url_repo.bulk_insert_discovered(urls, keyword_id, portal_type)
             print(f"DB 저장: inserted={ins} skipped={skp}")
 
-            kw_repo.set_cursor(keyword_id, None)  # 성공 완료 → cursor 리셋
+            kw_repo.set_retry_pending(keyword_id, False)
 
             log_repo.insert_discovery(DiscoveryLog(
                 keyword_id    = keyword_id,
@@ -236,8 +236,7 @@ def _run_db_mode(args: argparse.Namespace) -> None:
             duration_ms = int((time.monotonic() - mono_start) * 1000)
             print(f"\n오류 ({duration_ms}ms): {exc}", file=sys.stderr)
             if not dry:
-                # 실패 cursor 저장 → dispatcher 가 재시도 시 full scan 모드로 진입하게 함
-                kw_repo.set_cursor(keyword_id, "retry")
+                kw_repo.set_retry_pending(keyword_id, True)
             raise
 
 
