@@ -62,7 +62,7 @@ def run_extraction_loop(source: str, worker_id: str) -> None:
         fetcher     = HttpFetcher()
         limiter     = RateLimiter(domain_repo)
         extractor   = DefaultExtractor(domain_repo=domain_repo)  # domain_repo 주입 → 규칙 엔진 활성화
-        sink        = make_sink()  # SINK_TYPE 환경변수로 file / solr 선택
+        sink        = make_sink(engine)  # SINK_TYPE 환경변수로 file / solr 선택
 
         processed = urls_success = urls_failed = 0
         heartbeat_interval  = config.HEARTBEAT_INTERVAL_SECONDS

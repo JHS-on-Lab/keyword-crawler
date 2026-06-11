@@ -34,13 +34,10 @@ from app.types import Article
 class SolrSink:
     """Article 을 Solr 코어에 JSON 으로 upsert 한다."""
 
-    def __init__(self) -> None:
-        self._url        = config.SOLR_URL.rstrip("/")
+    def __init__(self, solr_url: str) -> None:
+        self._url        = solr_url.rstrip("/")
         self._batch_size = config.SOLR_BATCH_SIZE
         self._buffer: list[dict] = []
-
-        if not self._url:
-            raise ValueError("SOLR_URL 이 설정되지 않았습니다. .env 에 SOLR_URL 을 추가하세요.")
 
     def write(self, article: Article) -> None:
         self._buffer.append(to_solr_doc(article))
