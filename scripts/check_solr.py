@@ -55,9 +55,8 @@ def main() -> None:
     # 1. Ping
     print("1. Ping 테스트...")
     try:
-        resp = httpx.get(f"{solr_url}/admin/ping", timeout=5)
+        resp = httpx.get(f"{solr_url}/admin/ping", params={"wt": "json"}, timeout=5)
         resp.raise_for_status()
-        status = resp.json().get("status") or resp.text
         print(f"   상태: OK")
     except httpx.ConnectError:
         print(f"   [오류] {solr_url} 에 연결할 수 없습니다.")
